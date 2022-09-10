@@ -14,11 +14,11 @@ bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::
 	int EndPoint = GetRawIndex(Target, MapDimensions.first);
 
 	std::vector<Node> OpenSet = std::vector<Node>();
-	OpenSet.push_back(Node(StartPoint, 0, Distance(Start, Target, MapDimensions)));
-
 	std::vector<Node> ClosedSet = std::vector<Node>();
-
 	std::vector<Node> BestPath = std::vector<Node>();
+	std::vector<Node> Neighbors = std::vector<Node>();
+
+	OpenSet.push_back(Node(StartPoint, 0, Distance(Start, Target, MapDimensions)));
 
 	while (OpenSet.size() > 0)
 	{
@@ -34,7 +34,72 @@ bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::
 		OpenSet.erase(OpenSet.begin() + Current);
 		ClosedSet.push_back(CurrentNode);
 
+		Neighbors.clear();
+		std::pair<int, int> Point = GetCoords(CurrentNode.RawIndex, MapDimensions);
 
+		for (int i = 0, r = 0, c = 1; i < 4; i++, r = i >= 2, c = i < 2)
+		{
+			int sign = i == 0 || !(i % 2) ? 1 : -1;
+			std::pair<int, int> NPoint = { Point.first + sign * c, Point.second + sign * r };
+			if (!OnBounds(NPoint, MapDimensions)) continue;
+
+			Node NeighborNode = Node(GetRawIndex(NPoint, MapDimensions.second),
+				Distance(Start, Point, MapDimensions),
+				Distance(Point, Target, MapDimensions));
+			Neighbors.push_back(NeighborNode);
+		}
+
+		size_t NSize = Neighbors.size();
+		for (size_t i = 0; i < NSize; i++)
+		{
+			if (ContainsNode(ClosedSet, Neighbors[i])) continue;
+			int GScore = CurrentNode.GCost + Distance(GetCoords(Neighbors[i].RawIndex, MapDimensions), Point, MapDimensions);
+			if (GScore < Neighbors[i].GCost)
+			{
+				BestPath.push_back(CurrentNode);
+				Neighbors[i].GCost = GScore;
+				Neighbors[i].FCost = GScore + Neighbors[i].HCost;
+
+				if (!ContainsNode(OpenSet, Neighbors[i])) OpenSet.push_back(Neighbors[i]);
+			}
+		}
+	}
+
+	return false;
+}
+
+int GetRawIndex(const std::pair<int, int>& Point, int SizeY) 
+{ 
+	return Point.first + (Point.second * SizeY); 
+}
+
+// FIXME: Coords returns always 0
+std::pair<int, int> GetCoords(int Index, std::pair<int, int> Size)
+{
+	return { (Index / Size.first) * Size.first, (Index / Size.second) * Size.second }; 
+}
+
+int Distance(const std::pair<int, int>& Start, const std::pair<int, int>& End, const std::pair<int, int>& Dimensions)
+{
+	int x = abs(End.first - Start.first);
+	int y = abs(End.second - Start.second);
+	return sqrt((x * x) + (y * y));
+}
+
+bool OnBounds(const std::pair<int, int>& Point, const std::pair<int, int>& Dimensions)
+{
+	bool neg = (Point.first > -1) && (Point.second > -1);
+	bool pos = (Point.first < Dimensions.first) && (Point.second < Dimensions.second);
+	return neg && pos;
+}
+
+bool ContainsNode(const std::vector<Node>& NodeSet, const Node& NodeToCheck)
+{
+	size_t Size = NodeSet.size();
+	for (size_t i = 0; i < Size; i++)
+	{
+		if (NodeSet[i].RawIndex == NodeToCheck.RawIndex)
+			return true;
 	}
 
 	return false;
