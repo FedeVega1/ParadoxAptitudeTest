@@ -127,10 +127,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="FinderDebugger.cpp" />
     <ClCompile Include="Paradox Aptitude Test.cpp" />
     <ClCompile Include="PathFinder.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FinderDebugger.h" />
     <ClInclude Include="PathFinder.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

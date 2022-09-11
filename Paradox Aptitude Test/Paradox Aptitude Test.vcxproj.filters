@@ -21,9 +21,15 @@
     <ClCompile Include="PathFinder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="FinderDebugger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PathFinder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FinderDebugger.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

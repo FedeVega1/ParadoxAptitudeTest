@@ -8,6 +8,7 @@ int main()
 							 0, 1, 1, 1 };
 	std::vector<int> OutPath;
 
+	//bool result = FindPath({ 0, 2 }, { 3, 1 }, Map, { 4, 3 }, OutPath);
 	bool result = FindPath({ 0, 0 }, { 1, 2 }, Map, { 4, 3 }, OutPath);
 	if (result) 
 	{

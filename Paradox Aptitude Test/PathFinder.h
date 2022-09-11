@@ -29,10 +29,11 @@ struct Node
 bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::vector<int>& Map, std::pair<int, int> MapDimensions, std::vector<int>& OutPath);
 
 int GetRawIndex(const std::pair<int, int>& Point, int SizeY);
-std::pair<int, int> GetCoords(int Index, std::pair<int, int> Size);
+
+std::pair<int, int> GetCoords(int Index, int SizeX);
 
 bool OnBounds(const std::pair<int, int>& Point, const std::pair<int, int>& Dimensions);
 int Distance(const std::pair<int, int>& Start, const std::pair<int, int>& End, const std::pair<int, int>& Dimensions);
 bool ContainsNode(const std::vector<Node>& NodeSet, const Node& NodeToCheck);
-void MakePath(const std::vector<Node>& NodeSet, const Node& current, std::vector<int>& OutPath);
+void MakePath(int startIndex, const std::vector<Node>& NodeSet, const Node& current, std::vector<int>& OutPath);
 size_t GetCurrentNodeIndex(const std::vector<Node>& NodeSet);

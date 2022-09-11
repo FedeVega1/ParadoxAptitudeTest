@@ -1,6 +1,8 @@
 #include "PathFinder.h"
-#include <queue>
+#include "FinderDebugger.h"
+#include <stack>
 #include <cmath>
+#include <iostream>
 
 // Start: Starting Point - >= 0 && < MapDimensions && IsWalkeable
 // Target: Target Point - >= 0 && < MapDimensions && IsWalkeable
@@ -10,13 +12,15 @@
 
 bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::vector<int>& Map, std::pair<int, int> MapDimensions, std::vector<int>& OutPath)
 {
-	int StartPoint = GetRawIndex(Start, MapDimensions.first);
-	int EndPoint = GetRawIndex(Target, MapDimensions.first);
+	int StartPoint = GetRawIndex(Start, MapDimensions.second);
+	int EndPoint = GetRawIndex(Target, MapDimensions.second);
 
 	std::vector<Node> OpenSet = std::vector<Node>();
 	std::vector<Node> ClosedSet = std::vector<Node>();
 	std::vector<Node> BestPath = std::vector<Node>();
 	std::vector<Node> Neighbors = std::vector<Node>();
+
+	FinderDebugger Debugger = FinderDebugger(Start, Target, Map, MapDimensions);
 
 	OpenSet.push_back(Node(StartPoint, 0, Distance(Start, Target, MapDimensions)));
 
@@ -24,18 +28,21 @@ bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::
 	{
 		size_t Current = GetCurrentNodeIndex(OpenSet);
 		Node CurrentNode = OpenSet[Current];
+		Debugger.SetCurrentPoint(GetCoords(CurrentNode.RawIndex, MapDimensions.first));
 
 		if (CurrentNode.RawIndex == EndPoint)
 		{
-			MakePath(BestPath, CurrentNode, OutPath);
+			MakePath(StartPoint, BestPath, CurrentNode, OutPath);
+			Debugger.SetDefinedPath(Start, OutPath);
+			Debugger.DrawGrid(5000);
 			return true;
 		}
 
 		OpenSet.erase(OpenSet.begin() + Current);
 		ClosedSet.push_back(CurrentNode);
 
-		Neighbors.clear();
-		std::pair<int, int> Point = GetCoords(CurrentNode.RawIndex, MapDimensions);
+		if (Neighbors.size()) Neighbors.clear();
+		std::pair<int, int> Point = GetCoords(CurrentNode.RawIndex, MapDimensions.first);
 
 		for (int i = 0, r = 0, c = 1; i < 4; i++, r = i >= 2, c = i < 2)
 		{
@@ -43,9 +50,10 @@ bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::
 			std::pair<int, int> NPoint = { Point.first + sign * c, Point.second + sign * r };
 			if (!OnBounds(NPoint, MapDimensions)) continue;
 
+			Debugger.SetNeighbors(NPoint);
 			Node NeighborNode = Node(GetRawIndex(NPoint, MapDimensions.second),
-				Distance(Start, Point, MapDimensions),
-				Distance(Point, Target, MapDimensions));
+				999,
+				Distance(NPoint, Target, MapDimensions));
 			Neighbors.push_back(NeighborNode);
 		}
 
@@ -53,16 +61,27 @@ bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::
 		for (size_t i = 0; i < NSize; i++)
 		{
 			if (ContainsNode(ClosedSet, Neighbors[i])) continue;
-			int GScore = CurrentNode.GCost + Distance(GetCoords(Neighbors[i].RawIndex, MapDimensions), Point, MapDimensions);
-			if (GScore < Neighbors[i].GCost)
-			{
-				BestPath.push_back(CurrentNode);
-				Neighbors[i].GCost = GScore;
-				Neighbors[i].FCost = GScore + Neighbors[i].HCost;
+			int GScore = CurrentNode.GCost + 1;/*Distance(GetCoords(Neighbors[i].RawIndex, MapDimensions.first), Point, MapDimensions)*/
 
-				if (!ContainsNode(OpenSet, Neighbors[i])) OpenSet.push_back(Neighbors[i]);
+			if (ContainsNode(OpenSet, Neighbors[i]))
+			{
+				if (GScore < Neighbors[i].GCost)
+				{
+					Neighbors[i].GCost = GScore;
+					Neighbors[i].FCost = GScore + Neighbors[i].HCost;
+				}
+				continue;
 			}
+
+			if (!ContainsNode(BestPath, CurrentNode)) 
+				BestPath.push_back(CurrentNode);
+
+			Neighbors[i].GCost = GScore;
+			Neighbors[i].FCost = GScore + Neighbors[i].HCost;
+			OpenSet.insert(OpenSet.begin(), Neighbors[i]);
 		}
+
+		Debugger.DrawGrid(500);
 	}
 
 	return false;
@@ -70,20 +89,21 @@ bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::
 
 int GetRawIndex(const std::pair<int, int>& Point, int SizeY) 
 { 
-	return Point.first + (Point.second * SizeY); 
+	return Point.first + (Point.second * (SizeY + 1)); 
 }
 
-// FIXME: Coords returns always 0
-std::pair<int, int> GetCoords(int Index, std::pair<int, int> Size)
+std::pair<int, int> GetCoords(int Index, int SizeX)
 {
-	return { (Index / Size.first) * Size.first, (Index / Size.second) * Size.second }; 
+	int y = Index / SizeX;
+	return { Index - (y * SizeX), y };
 }
 
 int Distance(const std::pair<int, int>& Start, const std::pair<int, int>& End, const std::pair<int, int>& Dimensions)
 {
 	int x = abs(End.first - Start.first);
 	int y = abs(End.second - Start.second);
-	return sqrt((x * x) + (y * y));
+	return x + y;
+	//return sqrt((x * x) + (y * y));
 }
 
 bool OnBounds(const std::pair<int, int>& Point, const std::pair<int, int>& Dimensions)
@@ -105,11 +125,16 @@ bool ContainsNode(const std::vector<Node>& NodeSet, const Node& NodeToCheck)
 	return false;
 }
 
-void MakePath(const std::vector<Node>& NodeSet, const Node& current, std::vector<int>& OutPath)
+void MakePath(int startIndex, const std::vector<Node>& NodeSet, const Node& current, std::vector<int>& OutPath)
 {
-	OutPath.push_back(current.RawIndex);
 	size_t Size = NodeSet.size();
-	for (size_t i = 0; i < Size; i++) OutPath.push_back(NodeSet[i].RawIndex);
+	for (size_t i = 0; i < Size; i++)
+	{
+		if (NodeSet[i].RawIndex == startIndex) continue;
+		OutPath.push_back(NodeSet[i].RawIndex);
+	}
+
+	OutPath.push_back(current.RawIndex);
 }
 
 size_t GetCurrentNodeIndex(const std::vector<Node>& NodeSet)
@@ -125,6 +150,11 @@ size_t GetCurrentNodeIndex(const std::vector<Node>& NodeSet)
 
 	return Current;
 }
+
+//void AddElementToOpenSet(const Node& NodeToAdd, const std::vector<Node>& OpenSet)
+//{
+//
+//}
 
 //function reconstruct_path(cameFrom, current)
 //total_path : = { current }
