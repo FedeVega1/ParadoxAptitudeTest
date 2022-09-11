@@ -1,92 +1,88 @@
 #include "PathFinder.h"
 #include "FinderDebugger.h"
 #include <stack>
-#include <cmath>
-#include <iostream>
 
 bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::vector<int>& Map, std::pair<int, int> MapDimensions, std::vector<int>& OutPath)
 {
-	int StartPoint = GetRawIndex(Start, MapDimensions.first);
-	int EndPoint = GetRawIndex(Target, MapDimensions.first);
+	if (Start.first == Target.first && Start.second == Target.second) return true;
+	int StartIndex = GetIndexFromCoords(Start, MapDimensions.first);
+	int EndIndex = GetIndexFromCoords(Target, MapDimensions.first);
 
-	std::vector<Node> OpenSet = std::vector<Node>();
-	std::vector<Node> ClosedSet = std::vector<Node>();
-	std::vector<Node> BestPath = std::vector<Node>();
-	std::vector<Node> Neighbors = std::vector<Node>();
+	std::vector<Node> OpenSet = std::vector<Node>(); // Set of Nodes to analyze
+	std::vector<Node> ClosedSet = std::vector<Node>(); // Set of Nodes already analyzed
+	std::vector<Node> BestPath = std::vector<Node>(); // Best candidates
+	std::vector<Node> CurrentNeighbours = std::vector<Node>(); // Neighbours of the Current analyzed Node
 
-	FinderDebugger Debugger = FinderDebugger(Start, Target, Map, MapDimensions);
-	Debugger.DrawGrid(1000);
-
-	OpenSet.push_back(Node(StartPoint, Map[StartPoint], 0, Distance(Start, Target, MapDimensions)));
+	OpenSet.push_back(Node(StartIndex, Map[StartIndex], 0, Distance(Start, Target, MapDimensions)));
 
 	while (OpenSet.size() > 0)
 	{
+		// Get an open node with the lowest FCost.
 		size_t Current = GetCurrentNodeIndex(OpenSet);
 		Node CurrentNode = OpenSet[Current];
-		Debugger.SetCurrentPoint(GetCoords(CurrentNode.RawIndex, MapDimensions.first));
 
-		if (CurrentNode.RawIndex == EndPoint)
+		// If we reach our goal, build the path from the best nodes.
+		if (CurrentNode.RawIndex == EndIndex)
 		{
-			MakePath(StartPoint, BestPath, CurrentNode, OutPath);
-			Debugger.SetDefinedPath(Start, OutPath);
-			Debugger.DrawGrid(2000);
+			BuildPath(StartIndex, BestPath, CurrentNode, OutPath);
 			return true;
 		}
 
+		// Lock current node.
 		OpenSet.erase(OpenSet.begin() + Current);
 		ClosedSet.push_back(CurrentNode);
 
-		if (Neighbors.size()) Neighbors.clear();
-		std::pair<int, int> Point = GetCoords(CurrentNode.RawIndex, MapDimensions.first);
+		if (CurrentNeighbours.size() > 0) CurrentNeighbours.clear();
+		std::pair<int, int> Point = GetCoordsFromIndex(CurrentNode.RawIndex, MapDimensions.first);
 
-		for (int i = 0, r = 0, c = 1; i < 4; i++, r = i >= 2, c = i < 2)
+		// Get Neighbours from current Node.
+		for (int i = 0; i < 4; i++)
 		{
+			// Get X-neighbours if i < 2 and get Y-neighbours if i >= 2.
+
 			int sign = i == 0 || !(i % 2) ? 1 : -1;
-			std::pair<int, int> NPoint = { Point.first + sign * c, Point.second + sign * r };
+			std::pair<int, int> NPoint = { Point.first + sign * (i < 2), Point.second + sign * (i >= 2)};
 			if (!OnBounds(NPoint, MapDimensions)) continue;
 
-			int RawIndex = GetRawIndex(NPoint, MapDimensions.first);
+			// If neighbour is not a traversable location, continue.
+			int RawIndex = GetIndexFromCoords(NPoint, MapDimensions.first);
 			if (!Map[RawIndex]) continue;
 
-			Node NeighborNode = Node(RawIndex, Map[RawIndex], 999, Distance(NPoint, Target, MapDimensions));
-
-			Debugger.SetNeighbors(NPoint);
-			Neighbors.push_back(NeighborNode);
+			CurrentNeighbours.push_back(Node(RawIndex, Map[RawIndex], 999, Distance(NPoint, Target, MapDimensions)));
 		}
 
-		size_t NSize = Neighbors.size();
+		// Set Neighbours GCost and get candidates to analyze.
+		size_t NSize = CurrentNeighbours.size();
 		for (size_t i = 0; i < NSize; i++)
 		{
-			if (ContainsNode(ClosedSet, Neighbors[i])) continue;
-			int GScore = CurrentNode.GCost + 1;
+			if (ContainsNode(ClosedSet, CurrentNeighbours[i])) continue;
 
-			if (ContainsNode(OpenSet, Neighbors[i]))
+			// The desired GScore is the current node GScore + the distance between nodes.
+			int DesiredGScore = CurrentNode.GCost + 1;
+
+			// If this neighbour is already on OpenSet, Update its cost
+			if (ContainsNode(OpenSet, CurrentNeighbours[i]))
 			{
-				if (GScore < Neighbors[i].GCost)
-				{
-					Neighbors[i].GCost = GScore;
-					Neighbors[i].FCost = GScore + Neighbors[i].HCost;
-				}
+				if (DesiredGScore < CurrentNeighbours[i].GCost) 
+					CurrentNeighbours[i].UpdateNodeCost(DesiredGScore);
 				continue;
 			}
 
+			// Else push Current Node to candidates list and add the neighbour to the top of the list
 			if (!ContainsNode(BestPath, CurrentNode)) 
 				BestPath.push_back(CurrentNode);
 
-			Neighbors[i].GCost = GScore;
-			Neighbors[i].FCost = GScore + Neighbors[i].HCost;
-			OpenSet.insert(OpenSet.begin(), Neighbors[i]);
+			CurrentNeighbours[i].UpdateNodeCost(DesiredGScore);
+			OpenSet.insert(OpenSet.begin(), CurrentNeighbours[i]);
 		}
-
-		Debugger.DrawGrid(500);
 	}
 
 	return false;
 }
 
-int GetRawIndex(const std::pair<int, int>& Point, int SizeX) { return Point.first + (Point.second * SizeX); }
+int GetIndexFromCoords(const std::pair<int, int>& Point, int SizeX) { return Point.first + (Point.second * SizeX); }
 
-std::pair<int, int> GetCoords(int Index, int SizeX)
+std::pair<int, int> GetCoordsFromIndex(int Index, int SizeX)
 {
 	int y = Index / SizeX;
 	return { Index - (y * SizeX), y };
@@ -118,7 +114,7 @@ bool ContainsNode(const std::vector<Node>& NodeSet, const Node& NodeToCheck)
 	return false;
 }
 
-void MakePath(int startIndex, const std::vector<Node>& NodeSet, const Node& current, std::vector<int>& OutPath)
+void BuildPath(int startIndex, const std::vector<Node>& NodeSet, const Node& current, std::vector<int>& OutPath)
 {
 	size_t Size = NodeSet.size();
 	for (size_t i = 0; i < Size; i++)
