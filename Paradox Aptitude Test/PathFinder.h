@@ -5,20 +5,23 @@
 
 struct Node
 {
-	int RawIndex;
+	int RawIndex, CellType;
 	int FCost, GCost, HCost;
 
 	Node()
 	{
 		RawIndex = 0;
+		CellType = 0;
 		FCost = 0;
 		GCost = 0;
 		HCost = 0;
 	}
 
-	Node(int _RawIndex, int _GCost, int _HCost)
+	Node(int _RawIndex, int _CellType, int _GCost, int _HCost)
 	{
 		RawIndex = _RawIndex;
+		CellType = _CellType;
+
 		GCost = _GCost;
 		HCost = _HCost;
 

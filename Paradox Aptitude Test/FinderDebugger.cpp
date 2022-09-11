@@ -6,6 +6,7 @@ FinderDebugger::FinderDebugger(std::pair<int, int> _StartPoint, std::pair<int, i
 {
 	StartPoint = _StartPoint;
 	EndPoint = _EndPoint;
+	CurrentPoint = StartPoint;
 
 	MapGrid = Map;
 	MapDimensions = Dimensions;
@@ -67,8 +68,7 @@ void FinderDebugger::DrawGrid(int drawTime)
 				continue;
 			}
 
-
-			std::cout << "[ " << MapGrid[c + (r * MapDimensions.second)] << " ]";
+			std::cout << "[ " << MapGrid[c + (r * MapDimensions.first)] << " ]";
 		}
 
 		std::cout << std::endl;
@@ -80,7 +80,7 @@ void FinderDebugger::DrawGrid(int drawTime)
 
 void FinderDebugger::SetCurrentPoint(std::pair<int, int> _CurrentPoint) { CurrentPoint = _CurrentPoint; }
 void FinderDebugger::SetNeighbors(std::pair<int, int> Neighbor) { Neighbors.push_back(Neighbor); }
-bool FinderDebugger::InPoint(std::pair<int, int> Point, std::pair<int, int> Target) { return Point.first == Target.first && Point.second == Target.second; }
+bool FinderDebugger::InPoint(std::pair<int, int> Point, std::pair<int, int> Target) const { return Point.first == Target.first && Point.second == Target.second; }
 
 void FinderDebugger::SetDefinedPath(std::pair<int, int> Start, const std::vector<int>& _DefinedPath)
 {

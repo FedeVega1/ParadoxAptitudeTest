@@ -10,7 +10,7 @@ public:
 	void SetCurrentPoint(std::pair<int, int> _CurrentPoint);
 	void SetNeighbors(std::pair<int, int> Neighbor);
 	void SetDefinedPath(std::pair<int, int> Start, const std::vector<int>& _DefinedPath);
-	bool InPoint(std::pair<int, int> Point, std::pair<int, int> Target);
+	bool InPoint(std::pair<int, int> Point, std::pair<int, int> Target) const;
 
 private:
 	std::pair<int, int> StartPoint, EndPoint;
