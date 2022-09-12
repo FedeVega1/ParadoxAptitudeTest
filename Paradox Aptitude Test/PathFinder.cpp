@@ -1,6 +1,6 @@
 #include "PathFinder.h"
 #include "FinderDebugger.h"
-#include <stack>
+#include <cmath>
 
 bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::vector<int>& Map, std::pair<int, int> MapDimensions, std::vector<int>& OutPath)
 {
@@ -13,18 +13,24 @@ bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::
 	std::vector<Node> BestPath = std::vector<Node>(); // Best candidates
 	std::vector<Node> CurrentNeighbours = std::vector<Node>(); // Neighbours of the Current analyzed Node
 
-	OpenSet.push_back(Node(StartIndex, Map[StartIndex], 0, Distance(Start, Target, MapDimensions)));
+	FinderDebugger debug(Start, Target, Map, MapDimensions);
+	debug.DrawGrid(1000);
+
+	OpenSet.push_back(Node(StartIndex, Map[StartIndex], 0, Distance(Start, Target)));
 
 	while (OpenSet.size() > 0)
 	{
 		// Get an open node with the lowest FCost.
-		size_t Current = GetCurrentNodeIndex(OpenSet);
+		std::size_t Current = GetCurrentNodeIndex(OpenSet);
 		Node CurrentNode = OpenSet[Current];
+		debug.SetCurrentPoint(GetCoordsFromIndex(CurrentNode.RawIndex, MapDimensions.first));
 
 		// If we reach our goal, build the path from the best nodes.
 		if (CurrentNode.RawIndex == EndIndex)
 		{
 			BuildPath(StartIndex, BestPath, CurrentNode, OutPath);
+			debug.SetDefinedPath(Start, OutPath);
+			debug.DrawGrid(2000);
 			return true;
 		}
 
@@ -48,12 +54,13 @@ bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::
 			int RawIndex = GetIndexFromCoords(NPoint, MapDimensions.first);
 			if (!Map[RawIndex]) continue;
 
-			CurrentNeighbours.push_back(Node(RawIndex, Map[RawIndex], 999, Distance(NPoint, Target, MapDimensions)));
+			debug.SetNeighbors(NPoint);
+			CurrentNeighbours.push_back(Node(RawIndex, Map[RawIndex], 999, Distance(NPoint, Target)));
 		}
 
 		// Set Neighbours GCost and get candidates to analyze.
-		size_t NSize = CurrentNeighbours.size();
-		for (size_t i = 0; i < NSize; i++)
+		std::size_t NSize = CurrentNeighbours.size();
+		for (std::size_t i = 0; i < NSize; i++)
 		{
 			if (ContainsNode(ClosedSet, CurrentNeighbours[i])) continue;
 
@@ -63,7 +70,7 @@ bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::
 			// If this neighbour is already on OpenSet, Update its cost
 			if (ContainsNode(OpenSet, CurrentNeighbours[i]))
 			{
-				if (DesiredGScore < CurrentNeighbours[i].GCost) 
+				if (DesiredGScore < CurrentNeighbours[i].GCost)
 					CurrentNeighbours[i].UpdateNodeCost(DesiredGScore);
 				continue;
 			}
@@ -73,8 +80,11 @@ bool FindPath(std::pair<int, int> Start, std::pair<int, int> Target, const std::
 				BestPath.push_back(CurrentNode);
 
 			CurrentNeighbours[i].UpdateNodeCost(DesiredGScore);
+			//OpenSet.push_back(CurrentNeighbours[i]);
 			OpenSet.insert(OpenSet.begin(), CurrentNeighbours[i]);
 		}
+
+		debug.DrawGrid(1000);
 	}
 
 	return false;
@@ -88,7 +98,7 @@ std::pair<int, int> GetCoordsFromIndex(int Index, int SizeX)
 	return { Index - (y * SizeX), y };
 }
 
-int Distance(const std::pair<int, int>& Start, const std::pair<int, int>& End, const std::pair<int, int>& Dimensions)
+int Distance(const std::pair<int, int>& Start, const std::pair<int, int>& End)
 {
 	int x = abs(End.first - Start.first);
 	int y = abs(End.second - Start.second);
@@ -104,8 +114,8 @@ bool OnBounds(const std::pair<int, int>& Point, const std::pair<int, int>& Dimen
 
 bool ContainsNode(const std::vector<Node>& NodeSet, const Node& NodeToCheck)
 {
-	size_t Size = NodeSet.size();
-	for (size_t i = 0; i < Size; i++)
+	std::size_t Size = NodeSet.size();
+	for (std::size_t i = 0; i < Size; i++)
 	{
 		if (NodeSet[i].RawIndex == NodeToCheck.RawIndex)
 			return true;
@@ -116,8 +126,8 @@ bool ContainsNode(const std::vector<Node>& NodeSet, const Node& NodeToCheck)
 
 void BuildPath(int startIndex, const std::vector<Node>& NodeSet, const Node& current, std::vector<int>& OutPath)
 {
-	size_t Size = NodeSet.size();
-	for (size_t i = 0; i < Size; i++)
+	std::size_t Size = NodeSet.size();
+	for (std::size_t i = 0, c = 0; i < Size; i++)
 	{
 		if (NodeSet[i].RawIndex == startIndex) continue;
 		OutPath.push_back(NodeSet[i].RawIndex);
@@ -126,12 +136,12 @@ void BuildPath(int startIndex, const std::vector<Node>& NodeSet, const Node& cur
 	OutPath.push_back(current.RawIndex);
 }
 
-size_t GetCurrentNodeIndex(const std::vector<Node>& NodeSet)
+std::size_t GetCurrentNodeIndex(const std::vector<Node>& NodeSet)
 {
-	size_t Current = 0;
-	size_t Size = NodeSet.size();
+	std::size_t Current = 0;
+	std::size_t Size = NodeSet.size();
 
-	for (size_t i = 0; i < Size; i++)
+	for (std::size_t i = 0; i < Size; i++)
 	{
 		if (NodeSet[i].FCost < NodeSet[Current].FCost)
 			Current = i;

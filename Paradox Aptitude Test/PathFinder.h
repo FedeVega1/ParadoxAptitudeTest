@@ -33,7 +33,7 @@ int GetIndexFromCoords(const std::pair<int, int>& Point, int SizeY);
 std::pair<int, int> GetCoordsFromIndex(int Index, int SizeX);
 
 bool OnBounds(const std::pair<int, int>& Point, const std::pair<int, int>& Dimensions);
-int Distance(const std::pair<int, int>& Start, const std::pair<int, int>& End, const std::pair<int, int>& Dimensions);
+int Distance(const std::pair<int, int>& Start, const std::pair<int, int>& Endns);
 bool ContainsNode(const std::vector<Node>& NodeSet, const Node& NodeToCheck);
 void BuildPath(int startIndex, const std::vector<Node>& NodeSet, const Node& current, std::vector<int>& OutPath);
 size_t GetCurrentNodeIndex(const std::vector<Node>& NodeSet);

@@ -2,16 +2,37 @@
 #include <iostream>
 #include <chrono>
 
+//....##....
+//...#.##...
+//..#....#..
+//.#####..#.
+//........#.
+//.#####..#.
+//..#....#..
+//..#..###..
+//...#..#...
+//...####...
+
 int main()
 {
-	std::vector<int> Map = { 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1 };
+	std::vector<int> Map = { 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 
+							 1, 1, 1, 0, 1, 0, 0, 1, 1, 1,
+							 1, 1, 0, 1, 1, 1, 1, 0, 1, 1,
+							 1, 0, 0, 0, 0, 0, 1, 1, 0, 1,
+							 1, 1, 1, 1, 1, 1, 1, 1, 0, 1,
+							 1, 0, 0, 0, 0, 0, 1, 1, 0, 1,
+							 1, 1, 0, 1, 1, 1, 1, 0, 1, 1,
+							 1, 1, 0, 1, 1, 0, 0, 0, 1, 1,
+							 1, 1, 1, 0, 1, 1, 0, 1, 1, 1,
+							 1, 1, 1, 0, 0, 0, 0, 1, 1, 1
+	};
 	std::vector<int> OutPath;
 
 	//std::vector<int> Map = { 0, 0, 1, 0, 1, 1, 1, 0, 1 };
 	//std::vector<int> OutPath;
 
 	auto Start = std::chrono::high_resolution_clock::now();
-	bool Result = FindPath({ 0, 0 }, { 1, 2 }, Map, { 4, 3 }, OutPath);
+	bool Result = FindPath({ 0, 0 }, { 4, 1 }, Map, { 10, 10 }, OutPath);
 	//bool Result = FindPath({ 2, 0 }, { 0, 2 }, Map, { 3, 3 }, OutPath);
 	auto End = std::chrono::high_resolution_clock::now();
 
